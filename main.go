@@ -11,53 +11,72 @@ import (
 )
 
 const (
-	DEFAULT_HTTP_LISTEN_PORT int = 80
+	DEFAULT_HTTP_PORT int = 80
+	DEFAULT_HTTP_URI string = "/healthz"
 	DEFAULT_REDIS_ENDPOINT string = "127.0.0.1:6379"
 	REFRESH_INTERVAL_MS int = 1000							// Milliseconds
 	HTTP_RETURN_CODE_ERROR int = 410						// Gone!
 )
 
 var (
-	ctx = context.Background()
-	rdb *redis.Client
 	isEndpointHealthy = false
 )
 
 func main() {
 	var (
-		listenPort int
+		httpPort int
+		httpUri string
 		refreshInterval int
 		redisEndpoint string
 		redisPassword string
 		err error
+		ctx = context.Background()
+		rdb *redis.Client
 	)
 
 	// Set variables from env
-	if envListenPort := os.Getenv("LISTEN_PORT"); envListenPort != "" {
-		listenPort, err = strconv.Atoi(envListenPort)
-		if err != nil {
-			fmt.Printf("[warn] LISTEN_PORT is garbage, using %d instead", DEFAULT_HTTP_LISTEN_PORT)
-			listenPort = DEFAULT_HTTP_LISTEN_PORT
+	if envHttpPort := os.Getenv("HTTP_PORT"); envHttpPort != "" {
+		httpPort, err = strconv.Atoi(envHttpPort)
+		if err != nil || httpPort < 0 {
+			fmt.Printf("[warn] HTTP_PORT is garbage, using %d instead\n", DEFAULT_HTTP_PORT)
+			httpPort = DEFAULT_HTTP_PORT
 		}
 	} else {
-		listenPort = DEFAULT_HTTP_LISTEN_PORT
+		httpPort = DEFAULT_HTTP_PORT
 	}
+	fmt.Printf("[info] will listen to port %d\n", httpPort)
+
+	if envHttpUri := os.Getenv("HTTP_URI"); envHttpUri != "" {
+		httpUri = envHttpUri
+	} else {
+		httpUri = DEFAULT_HTTP_URI
+	}
+	fmt.Printf("[info] will use uri %s\n", httpUri)
+
 	if envRefreshInterval := os.Getenv("REFRESH_INTERVAL"); envRefreshInterval != "" {
 		refreshInterval, err = strconv.Atoi(envRefreshInterval)
-		if err != nil {
-			fmt.Printf("[warn] REFRESH_INTERVAL is garbage, using %d instead", REFRESH_INTERVAL_MS)
+		if err != nil || refreshInterval < 0 {
+			fmt.Printf("[warn] REFRESH_INTERVAL is garbage, using %d instead\n", REFRESH_INTERVAL_MS)
 			refreshInterval = REFRESH_INTERVAL_MS
+		}
+		if refreshInterval < 500 {
+			fmt.Printf("[warn] REFRESH_INTERVAL is too low, using %d instead\n", REFRESH_INTERVAL_MS)
 		}
 	} else {
 		refreshInterval = REFRESH_INTERVAL_MS
 	}
+	fmt.Printf("[info] will perform healthchecks every %d ms\n", refreshInterval)
+
 	if envRedisEndpoint := os.Getenv("REDIS_ENDPOINT"); envRedisEndpoint != "" {
 		redisEndpoint = envRedisEndpoint
 	} else {
 		redisEndpoint = DEFAULT_REDIS_ENDPOINT
 	}
+	fmt.Printf("[info] will check %s\n", redisEndpoint)
+
 	if envRedisPassword := os.Getenv("REDIS_PASSWORD"); envRedisPassword != "" {
 		redisPassword = envRedisPassword
+		fmt.Printf("[info] will authenticate using given password\n")
 	}
 
 	// Init redis-client
@@ -76,10 +95,13 @@ func main() {
 
 	// Listen in the background
 	go func(socket string) {
-		fmt.Printf("Listening on %s\n", socket)
+		fmt.Printf("[info] now running!\n")
 		http.HandleFunc("/healthz", httpHandler)
-		http.ListenAndServe(socket, nil)
-	}(":" + strconv.Itoa(listenPort))
+		if err = http.ListenAndServe(socket, nil); err != nil {
+			fmt.Printf("[err] %s\n", err)
+			os.Exit(1)
+		}
+	}(":" + strconv.Itoa(httpPort))
 
 	// Mainloop
 	for {
