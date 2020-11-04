@@ -25,7 +25,7 @@ $ curl localhost:9999/healthz/1
 5.6.7.8:6379 is HEALTHY
 ```
 
-If not specified, the following default values uwill be used:
+If not specified, the following default values will be used:
 ```
 HTTP_PORT=80
 HTTP_URI=/health/
