@@ -3,11 +3,11 @@ An example of the Kubernetes "sidecar health"-pattern, healthchecking one or mor
 
 Example:
 You define your variables as:
-$ export HTTP_PORT=9999
-$ export HTTP_URI=/healthz/
-$ export REFRESH_INTERVAL=5000
-$ export REDIS_ENDPOINTS="1.2.3.4:6379 5.6.7.7:6379"
-$ ./redis-nurse
+ $ export HTTP_PORT=9999
+ $ export HTTP_URI=/healthz/
+ $ export REFRESH_INTERVAL=5000
+ $ export REDIS_ENDPOINTS="1.2.3.4:6379 5.6.7.7:6379"
+ $ ./redis-nurse
 
 The status of the first endpoint (1.2.3.4:6379) will be available at :::$HTTP_PORT/$HTTP_URI/0
 $ curl localhost:9999/healthz/0
