@@ -3,19 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
-	"github.com/go-redis/redis/v8"
 )
 
 const (
-	DEFAULT_HTTP_PORT int = 80
-	DEFAULT_HTTP_URI string = "/healthz"
+	DEFAULT_HTTP_PORT      int    = 80
+	DEFAULT_HTTP_URI       string = "/health"
 	DEFAULT_REDIS_ENDPOINT string = "127.0.0.1:6379"
-	REFRESH_INTERVAL_MS int = 1000							// Milliseconds
-	HTTP_RETURN_CODE_ERROR int = 410						// Gone!
+	REFRESH_INTERVAL_MS    int    = 1000 // Milliseconds
+	HTTP_RETURN_CODE_ERROR int    = 410  // Gone!
 )
 
 var (
@@ -24,14 +24,14 @@ var (
 
 func main() {
 	var (
-		httpPort int
-		httpUri string
+		httpPort        int
+		httpUri         string
 		refreshInterval int
-		redisEndpoint string
-		redisPassword string
-		err error
-		ctx = context.Background()
-		rdb *redis.Client
+		redisEndpoint   string
+		redisPassword   string
+		err             error
+		ctx             = context.Background()
+		rdb             *redis.Client
 	)
 
 	// Set variables from env
@@ -82,14 +82,14 @@ func main() {
 	// Init redis-client
 	if len(redisPassword) > 0 {
 		rdb = redis.NewClient(&redis.Options{
-			Addr:		redisEndpoint,
-			Password:	redisPassword,
-			DB:			0,
+			Addr:     redisEndpoint,
+			Password: redisPassword,
+			DB:       0,
 		})
 	} else {
 		rdb = redis.NewClient(&redis.Options{
-			Addr:		redisEndpoint,
-			DB:			0,
+			Addr: redisEndpoint,
+			DB:   0,
 		})
 	}
 
